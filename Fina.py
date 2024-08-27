@@ -92,6 +92,13 @@ def process_data(uploaded_file, partner_id, buffer_percent, grade, district_digi
 def main():
     st.title("Student ID Generator")
     
+    # Initialize session state for buttons
+    if 'buttons_initialized' not in st.session_state:
+        st.session_state['buttons_initialized'] = True
+        st.session_state['download_data'] = None
+        st.session_state['download_mapped'] = None
+        st.session_state['download_teachers'] = None
+    
     uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
 
     if uploaded_file is not None:
@@ -111,17 +118,7 @@ def main():
         if st.button("Generate IDs"):
             data_expanded, data_mapped, teacher_codes = process_data(uploaded_file, partner_id, buffer_percent, grade, district_digits, block_digits, school_digits, student_digits, selected_param)
 
-            # Display results
-            st.write("Generated Student IDs:")
-            st.dataframe(data_expanded[['School_ID', 'Student_IDs']])
-            
-            st.write("Expanded Data with Student Numbers:")
-            st.dataframe(data_expanded[['School_ID', 'Student_IDs', 'student_no']])
-            
-            st.write("Generated Custom IDs:")
-            st.dataframe(data_expanded[['Student_IDs', 'Custom_ID']])
-            
-            # Provide download links for the generated files
+            # Save the data for download
             towrite1 = io.BytesIO()
             towrite2 = io.BytesIO()
             towrite3 = io.BytesIO()
@@ -136,9 +133,20 @@ def main():
             towrite2.seek(0)
             towrite3.seek(0)
             
-            st.download_button(label="Download Student IDs Excel", data=towrite1, file_name="Student_Ids.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-            st.download_button(label="Download Mapped Student IDs Excel", data=towrite2, file_name="Student_Ids_Mapped.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-            st.download_button(label="Download Teacher Codes Excel", data=towrite3, file_name="Teacher_Codes.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            # Update session state for download links
+            st.session_state['download_data'] = towrite1
+            st.session_state['download_mapped'] = towrite2
+            st.session_state['download_teachers'] = towrite3
+
+    # Always show download buttons
+    if st.session_state['download_data'] is not None:
+        st.download_button(label="Download Student IDs Excel", data=st.session_state['download_data'], file_name="Student_Ids.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        
+    if st.session_state['download_mapped'] is not None:
+        st.download_button(label="Download Mapped Student IDs Excel", data=st.session_state['download_mapped'], file_name="Student_Ids_Mapped.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        
+    if st.session_state['download_teachers'] is not None:
+        st.download_button(label="Download Teacher Codes Excel", data=st.session_state['download_teachers'], file_name="Teacher_Codes.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 if __name__ == "__main__":
     main()
